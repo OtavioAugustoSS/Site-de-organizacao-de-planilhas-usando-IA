@@ -1,7 +1,6 @@
-
 import React, { useState, useCallback } from 'react';
 import { restructureSpreadsheet } from './services/geminiService';
-import { downloadCSV } from './utils/csvHelper';
+import { downloadCSV, readFileAsCSV } from './utils/csvHelper';
 import { ProcessedData } from './types';
 import FileUpload from './components/FileUpload';
 import StructureInput from './components/StructureInput';
@@ -11,15 +10,35 @@ import { FileIcon, TargetIcon, DownloadIcon, SparklesIcon } from './components/I
 
 export default function App() {
   const [sourceFile, setSourceFile] = useState<File | null>(null);
+  const [sourceData, setSourceData] = useState<string | null>(null);
   const [targetStructure, setTargetStructure] = useState<string>('');
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = (file: File | null) => {
-    setSourceFile(file);
+  const handleFileChange = async (file: File | null) => {
     setError(null);
     setProcessedData(null);
+    setSourceFile(file);
+
+    if (file) {
+      setLoadingMessage('Reading spreadsheet...');
+      setIsLoading(true);
+      setError(null);
+      try {
+        const csvString = await readFileAsCSV(file);
+        setSourceData(csvString);
+      } catch (err) {
+        setSourceData(null);
+        setSourceFile(null); // Clear file if reading fails
+        setError(err instanceof Error ? err.message : 'Could not read the file.');
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      setSourceData(null);
+    }
   };
 
   const handleStructureChange = (structure: string) => {
@@ -30,17 +49,18 @@ export default function App() {
 
   const handleSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!sourceFile || !targetStructure) {
+    if (!sourceData || !targetStructure) {
       setError('Please provide both a source file and a target structure.');
       return;
     }
 
+    setLoadingMessage('AI is analyzing and restructuring...');
     setIsLoading(true);
     setError(null);
     setProcessedData(null);
 
     try {
-      const result = await restructureSpreadsheet(sourceFile.name, targetStructure);
+      const result = await restructureSpreadsheet(sourceData, targetStructure);
       setProcessedData(result);
     } catch (err) {
       console.error(err);
@@ -48,9 +68,9 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [sourceFile, targetStructure]);
+  }, [sourceData, targetStructure]);
 
-  const isButtonDisabled = !sourceFile || !targetStructure.trim() || isLoading;
+  const isButtonDisabled = !sourceData || !targetStructure.trim() || isLoading;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
@@ -89,12 +109,12 @@ export default function App() {
               className="inline-flex items-center justify-center px-8 py-3 font-semibold text-white bg-gradient-to-r from-blue-500 to-teal-400 rounded-lg shadow-lg hover:from-blue-600 hover:to-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-300"
             >
               <SparklesIcon className="w-5 h-5 mr-2" />
-              {isLoading ? 'Restructuring...' : 'Restructure Spreadsheet'}
+              {isLoading ? loadingMessage : 'Restructure Spreadsheet'}
             </button>
           </div>
         </form>
         
-        {isLoading && <Loader />}
+        {isLoading && <Loader message={loadingMessage} />}
 
         {error && (
           <div className="mt-8 max-w-4xl mx-auto text-center bg-red-100 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg" role="alert">

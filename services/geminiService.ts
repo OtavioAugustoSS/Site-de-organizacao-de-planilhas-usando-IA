@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { ProcessedData, DataRow, GeminiResponse } from '../types';
 
@@ -24,20 +23,27 @@ const responseSchema = {
   required: ["headers", "rows"],
 };
 
-export async function restructureSpreadsheet(fileName: string, targetStructure: string): Promise<ProcessedData> {
+export async function restructureSpreadsheet(sourceData: string, targetStructure: string): Promise<ProcessedData> {
   const prompt = `
-    You are an expert data transformation engine. A user has provided a source spreadsheet named '${fileName}' and needs to restructure it.
+    You are an expert data transformation engine. A user has provided a source spreadsheet and needs to restructure it to match a target model.
+
+    The source data is provided below in CSV format:
+    --- SOURCE DATA ---
+    ${sourceData}
+    --- END SOURCE DATA ---
     
     The user-defined target structure is:
     "${targetStructure}"
 
-    Your task is to generate a plausible sample dataset of 10 rows that perfectly matches this target structure. 
+    Your task is to analyze the source data and transform it to perfectly match the target structure. 
+    - Restructure, reorder, and reformat the data from the source file to precisely match the target model's layout.
+    - If a column in the target structure does not have a clear mapping from the source data, leave its values blank.
+    - If the source data seems to contain more columns than needed, only include the ones that map to the target structure.
     - The output must be a JSON object with two keys: "headers" and "rows".
-    - "headers" must be an array of strings representing the column titles.
-    - "rows" must be an array of arrays, where each inner array represents a single row of data.
+    - "headers" must be an array of strings representing the column titles from the target structure.
+    - "rows" must be an array of arrays, where each inner array represents a single row of transformed data.
     - The number of items in each row array must exactly match the number of items in the headers array.
     - Do not include any explanations, introductory text, or markdown formatting in your response. Only output the raw JSON.
-    - Generate realistic but synthetic data.
   `;
   
   try {
