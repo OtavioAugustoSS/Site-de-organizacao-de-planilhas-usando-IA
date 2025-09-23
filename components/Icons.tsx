@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export const FileIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -37,3 +36,9 @@ export const SparklesIcon = (props: React.SVGProps<SVGSVGElement>) => (
         <path d="M12 2.25a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75zM21.75 12a.75.75 0 01-.75.75h-3a.75.75 0 010-1.5h3a.75.75 0 01.75.75zM4.5 12a.75.75 0 01-.75.75h-3a.75.75 0 010-1.5h3a.75.75 0 01.75.75zM12 18a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3A.75.75 0 0112 18zM6.166 6.166a.75.75 0 011.06 0l2.122 2.122a.75.75 0 11-1.06 1.06L6.166 7.226a.75.75 0 010-1.06zM15.707 15.707a.75.75 0 011.06 0l2.122 2.122a.75.75 0 11-1.06 1.06l-2.122-2.122a.75.75 0 010-1.06zM17.828 6.166a.75.75 0 010 1.06L15.707 9.35a.75.75 0 01-1.06-1.06l2.121-2.121a.75.75 0 011.06 0zM7.226 15.707a.75.75 0 010 1.06L5.105 18.89a.75.75 0 01-1.06-1.06l2.121-2.121a.75.75 0 011.06 0z" />
     </svg>
 );
+
+export const CheckCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" {...props}>
+      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+    </svg>
+  );

@@ -8,42 +8,59 @@ const responseSchema = {
   properties: {
     headers: {
       type: Type.ARRAY,
-      description: "An array of strings representing the column headers, in the correct order.",
+      description: "An array of strings representing the column headers, in the correct order, based on the template spreadsheet.",
       items: { type: Type.STRING },
     },
     rows: {
       type: Type.ARRAY,
-      description: "An array of arrays, where each inner array is a row of data. The values in each row must correspond to the headers.",
+      description: "An array of arrays, where each inner array is a row of restructured data. The values in each row must correspond to the headers.",
       items: {
         type: Type.ARRAY,
         items: { type: Type.STRING },
       },
     },
+    transformationSummary: {
+        type: Type.ARRAY,
+        description: "A detailed log of the transformation process. Each string in the array should describe a specific action taken, such as column mapping, additions, or appends.",
+        items: { type: Type.STRING },
+    },
   },
-  required: ["headers", "rows"],
+  required: ["headers", "rows", "transformationSummary"],
 };
 
-export async function restructureSpreadsheet(sourceData: string, targetStructure: string): Promise<ProcessedData> {
+export async function restructureSpreadsheet(sourceData: string, templateData: string): Promise<ProcessedData> {
   const prompt = `
-    You are an expert data transformation engine. A user has provided a source spreadsheet and needs to restructure it to match a target model.
+    Persona: Act as an expert Data Transformation AI Engine. Your core purpose is to intelligently synchronize the structure of one spreadsheet (source) based on the schema of another (template). Your operations should be precise, data-preserving, and efficient.
 
-    The source data is provided below in CSV format:
-    --- SOURCE DATA ---
+    Mission: You will receive two spreadsheet files as CSV data. Your mission is to re-architect the source_spreadsheet to perfectly conform to the structure defined by the template_spreadsheet.
+
+    Inputs:
+    - source_spreadsheet: The file containing the original data in an outdated or incorrect structure.
+    - template_spreadsheet: The file that serves as the "golden record" or master template. Its structure (column names, order) is the target state.
+
+    Execution Protocol:
+    1.  Schema Extraction: Analyze the template_spreadsheet to extract its definitive schema: a list of exact column headers and their precise order.
+    2.  Source Analysis & Semantic Mapping: Analyze the source_spreadsheet. Create a mapping between the source columns and the template's schema using exact and fuzzy matching (e.g., map source 'Trans. ID' to template 'TransactionID').
+    3.  Data Transformation & Restructuring:
+        - Generate a new dataset based on the template's schema.
+        - Populate the new dataset's columns with data from the source_spreadsheet according to the mapping.
+        - For any columns defined in the template but not found in the source, create them as empty columns.
+        - For any unmapped columns from the source, append them to the end of the new dataset, preserving their original header and data, to prevent data loss.
+
+    Final Output:
+    Produce a JSON object with three keys: "headers", "rows", and "transformationSummary".
+    - "headers": An array of strings representing the final column titles, starting with the template columns in order, followed by any unmapped source columns.
+    - "rows": An array of arrays, where each inner array represents a single row of transformed data. The number of items in each row array must exactly match the number of items in the headers array.
+    - "transformationSummary": An array of human-readable strings detailing the changes made. For example: ["Mapped source column 'Old Name' to template column 'New Name'.", "Added missing template column 'Status'.", "Appended unmapped source column 'Legacy ID' to the end."]. This summary must be clear and concise.
+    - Do not include any explanations, introductory text, or markdown formatting in your response. Only output the raw JSON that adheres to the provided schema.
+
+    --- TEMPLATE SPREADSHEET (CSV) ---
+    ${templateData}
+    --- END TEMPLATE SPREADSHEET ---
+
+    --- SOURCE SPREADSHEET (CSV) ---
     ${sourceData}
-    --- END SOURCE DATA ---
-    
-    The user-defined target structure is:
-    "${targetStructure}"
-
-    Your task is to analyze the source data and transform it to perfectly match the target structure. 
-    - Restructure, reorder, and reformat the data from the source file to precisely match the target model's layout.
-    - If a column in the target structure does not have a clear mapping from the source data, leave its values blank.
-    - If the source data seems to contain more columns than needed, only include the ones that map to the target structure.
-    - The output must be a JSON object with two keys: "headers" and "rows".
-    - "headers" must be an array of strings representing the column titles from the target structure.
-    - "rows" must be an array of arrays, where each inner array represents a single row of transformed data.
-    - The number of items in each row array must exactly match the number of items in the headers array.
-    - Do not include any explanations, introductory text, or markdown formatting in your response. Only output the raw JSON.
+    --- END SOURCE SPREADSHEET ---
   `;
   
   try {
@@ -59,11 +76,11 @@ export async function restructureSpreadsheet(sourceData: string, targetStructure
     const jsonText = response.text.trim();
     const parsedResponse: GeminiResponse = JSON.parse(jsonText);
 
-    if (!parsedResponse.headers || !parsedResponse.rows) {
-        throw new Error("Invalid response format from AI. Missing 'headers' or 'rows'.");
+    if (!parsedResponse.headers || !parsedResponse.rows || !parsedResponse.transformationSummary) {
+        throw new Error("Invalid response format from AI. Missing 'headers', 'rows', or 'transformationSummary'.");
     }
 
-    const { headers, rows } = parsedResponse;
+    const { headers, rows, transformationSummary } = parsedResponse;
 
     const data: DataRow[] = rows.map((row) => {
       const rowObject: DataRow = {};
@@ -73,9 +90,12 @@ export async function restructureSpreadsheet(sourceData: string, targetStructure
       return rowObject;
     });
 
-    return { headers, data };
+    return { headers, data, transformationSummary };
   } catch (error) {
     console.error("Error calling Gemini API:", error);
+    if (error instanceof Error && error.message.includes('JSON')) {
+        throw new Error("The AI returned an invalid JSON response. Please try again.");
+    }
     throw new Error("Failed to restructure spreadsheet. The AI service may be unavailable or the request was invalid.");
   }
 }
