@@ -1,0 +1,5 @@
+{
+  "name": "Spreadsheet Restructuring AI",
+  "description": "An application that uses AI to analyze an Excel spreadsheet against a user-defined structural model, then automatically reformats the source spreadsheet to conform to the provided model's structure.",
+  "requestFramePermissions": []
+}
