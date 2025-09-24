@@ -10,27 +10,27 @@ export function readFileAsCSV(file: File): Promise<string> {
             try {
                 const data = event.target?.result;
                 if (!data) {
-                    reject(new Error("File content is empty."));
+                    reject(new Error("O conteúdo do arquivo está vazio."));
                     return;
                 }
                 const workbook = XLSX.read(data, { type: 'binary' });
                 const firstSheetName = workbook.SheetNames[0];
                 if (!firstSheetName) {
-                    reject(new Error("Spreadsheet contains no sheets."));
+                    reject(new Error("A planilha não contém abas."));
                     return;
                 }
                 const worksheet = workbook.Sheets[firstSheetName];
                 const csvString = XLSX.utils.sheet_to_csv(worksheet);
                 resolve(csvString);
             } catch (error) {
-                console.error("Error processing spreadsheet file:", error);
-                reject(new Error("Failed to parse the spreadsheet file. It might be corrupted or in an unsupported format."));
+                console.error("Erro ao processar o arquivo da planilha:", error);
+                reject(new Error("Falha ao analisar o arquivo da planilha. Ele pode estar corrompido ou em um formato não suportado."));
             }
         };
 
         reader.onerror = (error) => {
-            console.error("Error reading file:", error);
-            reject(new Error("Failed to read the file."));
+            console.error("Erro ao ler o arquivo:", error);
+            reject(new Error("Falha ao ler o arquivo."));
         };
 
         reader.readAsBinaryString(file);
@@ -39,13 +39,13 @@ export function readFileAsCSV(file: File): Promise<string> {
 
 export function downloadXLSX(data: DataRow[], filename: string) {
   if (!data || data.length === 0) {
-    console.warn('No data to download.');
+    console.warn('Nenhum dado para baixar.');
     return;
   }
   
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Restructured Data");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Dados Reestruturados");
   
   // Generate and trigger download
   XLSX.writeFile(workbook, filename, { bookType: "xlsx", type: "binary" });

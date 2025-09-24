@@ -1,19 +1,24 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ProcessedData, DataRow, GeminiResponse } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+const apiKey = process.env.API_KEY;
+if (!apiKey) {
+  throw new Error("A variável de ambiente API_KEY não foi encontrada. Por favor, crie um arquivo .env.local e adicione sua chave de API.");
+}
+const ai = new GoogleGenAI({ apiKey });
+
 
 const responseSchema = {
   type: Type.OBJECT,
   properties: {
     headers: {
       type: Type.ARRAY,
-      description: "An array of strings representing the column headers, in the correct order, based on the template spreadsheet.",
+      description: "Um array de strings representando os cabeçalhos das colunas, na ordem correta, com base na planilha modelo.",
       items: { type: Type.STRING },
     },
     rows: {
       type: Type.ARRAY,
-      description: "An array of arrays, where each inner array is a row of restructured data. The values in each row must correspond to the headers.",
+      description: "Um array de arrays, onde cada array interno é uma linha de dados reestruturados. Os valores em cada linha devem corresponder aos cabeçalhos.",
       items: {
         type: Type.ARRAY,
         items: { type: Type.STRING },
@@ -21,46 +26,52 @@ const responseSchema = {
     },
     transformationSummary: {
         type: Type.ARRAY,
-        description: "A detailed log of the transformation process. Each string in the array should describe a specific action taken, such as column mapping, additions, or appends.",
+        description: "Um registro detalhado do processo de transformação. Cada string no array deve descrever uma ação específica tomada, como mapeamento de colunas, adições ou anexos.",
         items: { type: Type.STRING },
     },
+    aiCommentary: {
+        type: Type.STRING,
+        description: "Um resumo breve, amigável e conversacional do processo de transformação. Deve soar como um comentário da IA, destacando as ações ou observações mais importantes.",
+    },
   },
-  required: ["headers", "rows", "transformationSummary"],
+  required: ["headers", "rows", "transformationSummary", "aiCommentary"],
 };
 
 export async function restructureSpreadsheet(sourceData: string, templateData: string): Promise<ProcessedData> {
   const prompt = `
-    Persona: Act as an expert Data Transformation AI Engine. Your core purpose is to intelligently synchronize the structure of one spreadsheet (source) based on the schema of another (template). Your operations should be precise, data-preserving, and efficient.
+    Persona: Atue como um Motor de IA especialista em Transformação de Dados. Seu propósito principal é sincronizar inteligentemente a estrutura de uma planilha (origem) com base no esquema de outra (modelo). Suas operações devem ser precisas, eficientes e preservar os dados.
 
-    Mission: You will receive two spreadsheet files as CSV data. Your mission is to re-architect the source_spreadsheet to perfectly conform to the structure defined by the template_spreadsheet.
+    Missão: Você receberá dois arquivos de planilha como dados CSV. Sua missão é re-arquitetar a planilha_origem para se conformar perfeitamente à estrutura definida pela planilha_modelo.
 
-    Inputs:
-    - source_spreadsheet: The file containing the original data in an outdated or incorrect structure.
-    - template_spreadsheet: The file that serves as the "golden record" or master template. Its structure (column names, order) is the target state.
+    Entradas:
+    - planilha_origem: O arquivo contendo os dados originais em uma estrutura desatualizada ou incorreta.
+    - planilha_modelo: O arquivo que serve como o "registro mestre" ou modelo principal. Sua estrutura (nomes e ordem das colunas) é o estado final desejado.
 
-    Execution Protocol:
-    1.  Schema Extraction: Analyze the template_spreadsheet to extract its definitive schema: a list of exact column headers and their precise order.
-    2.  Source Analysis & Semantic Mapping: Analyze the source_spreadsheet. Create a mapping between the source columns and the template's schema using exact and fuzzy matching (e.g., map source 'Trans. ID' to template 'TransactionID').
-    3.  Data Transformation & Restructuring:
-        - Generate a new dataset based on the template's schema.
-        - Populate the new dataset's columns with data from the source_spreadsheet according to the mapping.
-        - For any columns defined in the template but not found in the source, create them as empty columns.
-        - For any unmapped columns from the source, append them to the end of the new dataset, preserving their original header and data, to prevent data loss.
+    Protocolo de Execução:
+    1.  Extração de Esquema: Analise a planilha_modelo para extrair seu esquema definitivo: uma lista exata dos cabeçalhos das colunas e sua ordem precisa.
+    2.  Análise da Origem e Mapeamento Semântico: Analise a planilha_origem. Crie um mapeamento entre as colunas de origem e o esquema do modelo usando correspondência exata e aproximada (por exemplo, mapeie 'ID da Trans.' da origem para 'IDTransacao' do modelo).
+    3.  Transformação e Reestruturação de Dados:
+        - Gere um novo conjunto de dados com base no esquema do modelo.
+        - Preencha as colunas do novo conjunto de dados com os dados da planilha_origem de acordo com o mapeamento.
+        - **Inferência de Tipo e Formato de Dados:** Analise inteligentemente os dados dentro das colunas. Onde possível, infira e tente padronizar formatos para tipos de dados comuns como datas (ex: padronizar para AAAA-MM-DD), moeda (ex: remover símbolos de moeda, mas manter o valor numérico), ou porcentagens.
+        - Para quaisquer colunas definidas no modelo, mas não encontradas na origem, crie-as como colunas vazias.
+        - Para quaisquer colunas não mapeadas da origem, anexe-as ao final do novo conjunto de dados, preservando seu cabeçalho e dados originais, para evitar a perda de dados.
 
-    Final Output:
-    Produce a JSON object with three keys: "headers", "rows", and "transformationSummary".
-    - "headers": An array of strings representing the final column titles, starting with the template columns in order, followed by any unmapped source columns.
-    - "rows": An array of arrays, where each inner array represents a single row of transformed data. The number of items in each row array must exactly match the number of items in the headers array.
-    - "transformationSummary": An array of human-readable strings detailing the changes made. For example: ["Mapped source column 'Old Name' to template column 'New Name'.", "Added missing template column 'Status'.", "Appended unmapped source column 'Legacy ID' to the end."]. This summary must be clear and concise.
-    - Do not include any explanations, introductory text, or markdown formatting in your response. Only output the raw JSON that adheres to the provided schema.
+    Saída Final:
+    Produza um objeto JSON com quatro chaves: "headers", "rows", "transformationSummary" e "aiCommentary".
+    - "headers": Um array de strings representando os títulos finais das colunas, começando com as colunas do modelo em ordem, seguidas por quaisquer colunas de origem não mapeadas.
+    - "rows": Um array de arrays, onde cada array interno representa uma única linha de dados transformados. O número de itens em cada array de linha deve corresponder exatamente ao número de itens no array de cabeçalhos.
+    - "transformationSummary": Um array de strings legíveis por humanos detalhando as alterações feitas. Este registro deve ser claro, conciso e declarar explicitamente quaisquer suposições feitas durante o processo. Por exemplo: ["Coluna de origem 'Nome Antigo' mapeada para 'Nome Novo' com base na similaridade semântica.", "Todas as datas em 'DataPedido' foram padronizadas para o formato AAAA-MM-DD.", "Adicionada a coluna faltante do modelo 'Status'.", "Anexada a coluna de origem não mapeada 'ID Legado' ao final."].
+    - "aiCommentary": Um resumo breve, amigável e conversacional do processo de transformação. Deve soar como um comentário do assistente de IA, destacando as ações mais importantes tomadas ou observações feitas. Por exemplo: "Eu alinhei com sucesso seus dados de origem com o modelo! Mapeei várias colunas, adicionei uma nova coluna 'Status' do seu modelo e anexei algumas colunas extras do seu arquivo de origem ao final para garantir que nenhum dado fosse perdido. Tudo deve estar em perfeita ordem agora."
+    - Não inclua nenhuma explicação, texto introdutório ou formatação markdown em sua resposta. Apenas retorne o JSON bruto que adere ao esquema fornecido.
 
-    --- TEMPLATE SPREADSHEET (CSV) ---
+    --- PLANILHA MODELO (CSV) ---
     ${templateData}
-    --- END TEMPLATE SPREADSHEET ---
+    --- FIM PLANILHA MODELO ---
 
-    --- SOURCE SPREADSHEET (CSV) ---
+    --- PLANILHA DE ORIGEM (CSV) ---
     ${sourceData}
-    --- END SOURCE SPREADSHEET ---
+    --- FIM PLANILHA DE ORIGEM ---
   `;
   
   try {
@@ -76,11 +87,11 @@ export async function restructureSpreadsheet(sourceData: string, templateData: s
     const jsonText = response.text.trim();
     const parsedResponse: GeminiResponse = JSON.parse(jsonText);
 
-    if (!parsedResponse.headers || !parsedResponse.rows || !parsedResponse.transformationSummary) {
-        throw new Error("Invalid response format from AI. Missing 'headers', 'rows', or 'transformationSummary'.");
+    if (!parsedResponse.headers || !parsedResponse.rows || !parsedResponse.transformationSummary || !parsedResponse.aiCommentary) {
+        throw new Error("Formato de resposta da IA inválido. Faltando 'headers', 'rows', 'transformationSummary' ou 'aiCommentary'.");
     }
 
-    const { headers, rows, transformationSummary } = parsedResponse;
+    const { headers, rows, transformationSummary, aiCommentary } = parsedResponse;
 
     const data: DataRow[] = rows.map((row) => {
       const rowObject: DataRow = {};
@@ -90,12 +101,12 @@ export async function restructureSpreadsheet(sourceData: string, templateData: s
       return rowObject;
     });
 
-    return { headers, data, transformationSummary };
+    return { headers, data, transformationSummary, aiCommentary };
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
+    console.error("Erro ao chamar a API Gemini:", error);
     if (error instanceof Error && error.message.includes('JSON')) {
-        throw new Error("The AI returned an invalid JSON response. Please try again.");
+        throw new Error("A IA retornou uma resposta JSON inválida. Por favor, tente novamente.");
     }
-    throw new Error("Failed to restructure spreadsheet. The AI service may be unavailable or the request was invalid.");
+    throw new Error("Falha ao reestruturar a planilha. O serviço de IA pode estar indisponível ou a solicitação foi inválida.");
   }
 }

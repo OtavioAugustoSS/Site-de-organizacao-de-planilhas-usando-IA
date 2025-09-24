@@ -11,7 +11,7 @@ const ResultTable: React.FC<ResultTableProps> = ({ headers, data }) => {
   if (!data || data.length === 0) {
     return (
       <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-        <p className="text-gray-500 dark:text-gray-400">No data to display.</p>
+        <p className="text-gray-500 dark:text-gray-400">Nenhum dado para exibir.</p>
       </div>
     );
   }

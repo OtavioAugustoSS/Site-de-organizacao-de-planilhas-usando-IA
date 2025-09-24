@@ -80,14 +80,14 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileChange }) => {
         <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
           <UploadIcon className="w-10 h-10 mb-3 text-gray-400" />
           <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-            <span className="font-semibold">Click to upload</span> or drag and drop
+            <span className="font-semibold">Clique para enviar</span> ou arraste e solte
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">XLSX, XLS, CSV, or ODS</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">XLSX, XLS, CSV ou ODS</p>
         </div>
       </div>
       {fileName && (
         <div className="mt-4 text-center text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50 p-2 rounded-md truncate">
-          Selected: <span className="font-semibold">{fileName}</span>
+          Selecionado: <span className="font-semibold">{fileName}</span>
         </div>
       )}
     </div>

@@ -4,7 +4,7 @@ interface LoaderProps {
   message?: string;
 }
 
-const Loader: React.FC<LoaderProps> = ({ message = "Processing..." }) => {
+const Loader: React.FC<LoaderProps> = ({ message = "Processando..." }) => {
   return (
     <div className="flex flex-col items-center justify-center my-10">
       <svg

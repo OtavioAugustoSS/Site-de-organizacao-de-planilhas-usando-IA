@@ -1,5 +1,5 @@
 {
-  "name": "Spreadsheet Restructuring AI",
-  "description": "An application that uses AI to analyze an Excel spreadsheet against a user-defined structural model, then automatically reformats the source spreadsheet to conform to the provided model's structure.",
+  "name": "IA para Reestruturação de Planilhas",
+  "description": "Uma aplicação que usa IA para analisar uma planilha em relação a um modelo estrutural definido pelo usuário e, em seguida, reformata automaticamente a planilha de origem para se adequar à estrutura do modelo fornecido.",
   "requestFramePermissions": []
 }
