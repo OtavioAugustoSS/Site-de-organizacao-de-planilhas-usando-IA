@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { restructureSpreadsheet } from './services/geminiService';
 import { downloadXLSX, readFileAsCSV } from './utils/csvHelper';
-import { ProcessedData } from './types';
+import { ProcessedData, HistoryEntry } from './types';
 import FileUpload from './components/FileUpload';
 import Loader from './components/Loader';
+import History from './components/History';
 import { FileIcon, TargetIcon, DownloadIcon, SparklesIcon, CheckCircleIcon } from './components/Icons';
 
 export default function App() {
@@ -15,6 +16,20 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadingMessage, setLoadingMessage] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  useEffect(() => {
+    try {
+      const storedHistory = localStorage.getItem('transformationHistory');
+      if (storedHistory) {
+        setHistory(JSON.parse(storedHistory));
+      }
+    } catch (error) {
+      console.error("Falha ao carregar o histórico do localStorage", error);
+      setHistory([]);
+    }
+  }, []);
+
 
   const handleFileChange = async (
     file: File | null, 
@@ -69,21 +84,61 @@ export default function App() {
       return;
     }
 
-    setLoadingMessage('A IA está analisando e reestruturando...');
+    setLoadingMessage('Iniciando...');
     setIsLoading(true);
     setError(null);
     setProcessedData(null);
 
     try {
-      const result = await restructureSpreadsheet(sourceData, templateData);
+      const result = await restructureSpreadsheet(sourceData, templateData, setLoadingMessage);
       setProcessedData(result);
+
+      if (sourceFile && templateFile) {
+        const newHistoryEntry: HistoryEntry = {
+          id: Date.now(),
+          sourceFileName: sourceFile.name,
+          templateFileName: templateFile.name,
+          timestamp: new Date().toISOString(),
+          processedData: result,
+        };
+        
+        setHistory(prevHistory => {
+          const updatedHistory = [newHistoryEntry, ...prevHistory];
+          try {
+            localStorage.setItem('transformationHistory', JSON.stringify(updatedHistory));
+          } catch (error) {
+            console.error("Falha ao salvar o histórico no localStorage", error);
+          }
+          return updatedHistory;
+        });
+      }
+
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Ocorreu um erro desconhecido.');
     } finally {
       setIsLoading(false);
     }
-  }, [sourceData, templateData]);
+  }, [sourceData, templateData, sourceFile, templateFile]);
+  
+  const handleClearHistory = useCallback(() => {
+    if (window.confirm("Tem certeza de que deseja limpar todo o histórico? Esta ação não pode ser desfeita.")) {
+      setHistory([]);
+      try {
+        localStorage.removeItem('transformationHistory');
+      } catch (error) {
+        console.error("Falha ao limpar o histórico do localStorage", error);
+      }
+    }
+  }, []);
+  
+  const handleHistoryDownload = useCallback((entry: HistoryEntry) => {
+    const sourceName = entry.sourceFileName.split('.').slice(0, -1).join('.') || 'origem';
+    const templateName = entry.templateFileName.split('.').slice(0, -1).join('.') || 'modelo';
+    const fileName = `reestruturado_${sourceName}_com_${templateName}.xlsx`;
+    downloadXLSX(entry.processedData.data, fileName);
+  }, []);
+
 
   const isButtonDisabled = !sourceData || !templateData || isLoading;
 
@@ -104,14 +159,14 @@ export default function App() {
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
               <h2 className="text-xl font-semibold mb-4 flex items-center">
                 <FileIcon className="w-6 h-6 mr-2 text-blue-500" />
-                1. Enviar Planilha de Origem
+                Envie o Modelo Antigo
               </h2>
               <FileUpload onFileChange={(file) => handleFileChange(file, 'source')} />
             </div>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
                <h2 className="text-xl font-semibold mb-4 flex items-center">
                 <TargetIcon className="w-6 h-6 mr-2 text-teal-500" />
-                2. Enviar Planilha Modelo
+                Envie a Planilha Modelo
               </h2>
               <FileUpload onFileChange={(file) => handleFileChange(file, 'template')} />
             </div>
@@ -125,7 +180,7 @@ export default function App() {
               className="inline-flex items-center justify-center px-8 py-3 font-semibold text-white bg-gradient-to-r from-blue-500 to-teal-400 rounded-lg shadow-lg hover:from-blue-600 hover:to-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-300"
             >
               <SparklesIcon className="w-5 h-5 mr-2" />
-              {isLoading ? loadingMessage : 'Reestruturar Planilha'}
+              {isLoading ? 'Processando...' : 'Reestruturar Planilha'}
             </button>
           </div>
         </form>
@@ -180,6 +235,13 @@ export default function App() {
             </div>
           </div>
         )}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <History
+            history={history}
+            onClearHistory={handleClearHistory}
+            onDownload={handleHistoryDownload}
+          />
+        </div>
       </main>
     </div>
   );

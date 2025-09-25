@@ -14,25 +14,20 @@
         font-family: 'Inter', sans-serif;
       }
     </style>
-    <!-- SheetJS para manipulação de planilhas -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <!-- Importmap para resolver imports de módulos no navegador -->
-    <script type="importmap">
-      {
-        "imports": {
-          "@google/genai": "https://esm.run/@google/genai"
-        }
-      }
-    </script>
-    <!-- React e ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <!-- Babel para transpilar JSX/TS no navegador -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  </head>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0"
+  }
+}
+</script>
+</head>
   <body class="bg-gray-50 dark:bg-gray-900">
     <div id="root"></div>
-    <!-- O tipo do script deve ser 'text/babel' para que o Babel o processe -->
-    <script type="text/babel" data-type="module" src="/index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

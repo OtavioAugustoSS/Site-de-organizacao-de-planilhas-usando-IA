@@ -13,3 +13,11 @@ export interface GeminiResponse {
     transformationSummary: string[];
     aiCommentary: string;
 }
+
+export interface HistoryEntry {
+  id: number;
+  sourceFileName: string;
+  templateFileName: string;
+  timestamp: string;
+  processedData: ProcessedData;
+}

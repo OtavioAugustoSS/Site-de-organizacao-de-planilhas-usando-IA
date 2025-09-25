@@ -1,44 +1,51 @@
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, type FunctionDeclarationsTool } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { ProcessedData, DataRow, GeminiResponse } from '../types';
 import { GEMINI_API_KEY } from '../config';
 
-const apiKey = GEMINI_API_KEY;
+// Prioriza a chave de API do ambiente (fornecida pela plataforma)
+// e usa o arquivo config.ts como fallback para desenvolvimento local.
+const apiKey = process.env.API_KEY || GEMINI_API_KEY;
+
 if (!apiKey || apiKey === "SUA_CHAVE_API_AQUI") {
-  throw new Error("A chave da API do Gemini não foi encontrada. Por favor, adicione sua chave ao arquivo 'config.ts'.");
+  throw new Error("A chave da API do Gemini não foi encontrada. Certifique-se de que está configurada no ambiente ou no arquivo 'config.ts'.");
 }
-const genAI = new GoogleGenerativeAI(apiKey);
+const ai = new GoogleGenAI({ apiKey });
 
 
 const responseSchema = {
-  type: "object",
+  type: Type.OBJECT,
   properties: {
     headers: {
-      type: "array",
+      type: Type.ARRAY,
       description: "Um array de strings representando os cabeçalhos das colunas, na ordem correta, com base na planilha modelo.",
-      items: { type: "string" },
+      items: { type: Type.STRING },
     },
     rows: {
-      type: "array",
+      type: Type.ARRAY,
       description: "Um array de arrays, onde cada array interno é uma linha de dados reestruturados. Os valores em cada linha devem corresponder aos cabeçalhos.",
       items: {
-        type: "array",
-        items: { type: "string" },
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
       },
     },
     transformationSummary: {
-        type: "array",
+        type: Type.ARRAY,
         description: "Um registro detalhado do processo de transformação. Cada string no array deve descrever uma ação específica tomada, como mapeamento de colunas, adições ou anexos.",
-        items: { type: "string" },
+        items: { type: Type.STRING },
     },
     aiCommentary: {
-        type: "string",
+        type: Type.STRING,
         description: "Um resumo breve, amigável e conversacional do processo de transformação. Deve soar como um comentário da IA, destacando as ações ou observações mais importantes.",
     },
   },
   required: ["headers", "rows", "transformationSummary", "aiCommentary"],
 };
 
-export async function restructureSpreadsheet(sourceData: string, templateData: string): Promise<ProcessedData> {
+export async function restructureSpreadsheet(
+  sourceData: string, 
+  templateData: string,
+  onProgress: (message: string) => void
+): Promise<ProcessedData> {
   const prompt = `
     Persona: Atue como um Motor de IA especialista em Transformação de Dados. Seu propósito principal é sincronizar inteligentemente a estrutura de uma planilha (origem) com base no esquema de outra (modelo). Suas operações devem ser precisas, eficientes e preservar os dados.
 
@@ -76,16 +83,19 @@ export async function restructureSpreadsheet(sourceData: string, templateData: s
   `;
   
   try {
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      generationConfig: {
+    onProgress('Analisando planilhas...');
+
+    onProgress('Consultando IA... (Isso pode levar um momento)');
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
         responseMimeType: 'application/json',
         responseSchema: responseSchema,
       }
     });
-    const result = await model.generateContent(prompt);
-    const response = result.response;
 
+    onProgress('Processando resposta da IA...');
     const jsonText = response.text.trim();
     const parsedResponse: GeminiResponse = JSON.parse(jsonText);
 
@@ -93,6 +103,7 @@ export async function restructureSpreadsheet(sourceData: string, templateData: s
         throw new Error("Formato de resposta da IA inválido. Faltando 'headers', 'rows', 'transformationSummary' ou 'aiCommentary'.");
     }
 
+    onProgress('Formatando resultado final...');
     const { headers, rows, transformationSummary, aiCommentary } = parsedResponse;
 
     const data: DataRow[] = rows.map((row) => {
