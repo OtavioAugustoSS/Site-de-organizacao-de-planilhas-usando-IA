@@ -1,36 +1,37 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, type FunctionDeclarationsTool } from "@google/genai";
 import { ProcessedData, DataRow, GeminiResponse } from '../types';
+import { GEMINI_API_KEY } from '../config';
 
-const apiKey = process.env.API_KEY;
-if (!apiKey) {
-  throw new Error("A variável de ambiente API_KEY não foi encontrada. Por favor, crie um arquivo .env.local e adicione sua chave de API.");
+const apiKey = GEMINI_API_KEY;
+if (!apiKey || apiKey === "SUA_CHAVE_API_AQUI") {
+  throw new Error("A chave da API do Gemini não foi encontrada. Por favor, adicione sua chave ao arquivo 'config.ts'.");
 }
-const ai = new GoogleGenAI({ apiKey });
+const genAI = new GoogleGenerativeAI(apiKey);
 
 
 const responseSchema = {
-  type: Type.OBJECT,
+  type: "object",
   properties: {
     headers: {
-      type: Type.ARRAY,
+      type: "array",
       description: "Um array de strings representando os cabeçalhos das colunas, na ordem correta, com base na planilha modelo.",
-      items: { type: Type.STRING },
+      items: { type: "string" },
     },
     rows: {
-      type: Type.ARRAY,
+      type: "array",
       description: "Um array de arrays, onde cada array interno é uma linha de dados reestruturados. Os valores em cada linha devem corresponder aos cabeçalhos.",
       items: {
-        type: Type.ARRAY,
-        items: { type: Type.STRING },
+        type: "array",
+        items: { type: "string" },
       },
     },
     transformationSummary: {
-        type: Type.ARRAY,
+        type: "array",
         description: "Um registro detalhado do processo de transformação. Cada string no array deve descrever uma ação específica tomada, como mapeamento de colunas, adições ou anexos.",
-        items: { type: Type.STRING },
+        items: { type: "string" },
     },
     aiCommentary: {
-        type: Type.STRING,
+        type: "string",
         description: "Um resumo breve, amigável e conversacional do processo de transformação. Deve soar como um comentário da IA, destacando as ações ou observações mais importantes.",
     },
   },
@@ -75,14 +76,15 @@ export async function restructureSpreadsheet(sourceData: string, templateData: s
   `;
   
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: responseSchema,
       }
     });
+    const result = await model.generateContent(prompt);
+    const response = result.response;
 
     const jsonText = response.text.trim();
     const parsedResponse: GeminiResponse = JSON.parse(jsonText);
