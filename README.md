@@ -1,21 +1,3 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/drive/1PVixvcqpTZM09OeRKZYCfpu964IkNNGt
-
-## Run Locally
-
-### Prerequisites
-- Node.js
-- Python 3.8+
-
-### 1. Backend Setup
-
 1. Navigate to the backend directory:
    ```bash
    cd backend
@@ -50,4 +32,4 @@ View your app in AI Studio: https://ai.studio/apps/drive/1PVixvcqpTZM09OeRKZYCfp
    ```bash
    npm run dev
    ```
-   The frontend will run at `http://localhost:5173`.
+   The frontend will run at `http://localhost:3000`.
