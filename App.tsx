@@ -43,7 +43,7 @@ const App: React.FC = () => {
       console.error(error);
       setProcessingState({
         status: 'error',
-        message: 'Failed to read file. Please ensure it is a valid spreadsheet.'
+        message: 'Falha ao ler o arquivo. Certifique-se de que é uma planilha válida.'
       });
     }
   };
@@ -65,7 +65,7 @@ const App: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to restructure file');
+        throw new Error(errorData.detail || 'Falha ao reestruturar arquivo');
       }
 
       const data = await response.json();
@@ -87,7 +87,7 @@ const App: React.FC = () => {
       console.error(error);
       setProcessingState({
         status: 'error',
-        message: error.message || 'An unexpected error occurred during restructuring.'
+        message: error.message || 'Um erro inesperado ocorreu durante a reestruturação.'
       });
     }
   };
@@ -112,7 +112,7 @@ const App: React.FC = () => {
       <header className="absolute top-0 right-0 p-6 z-10">
         <button
           onClick={() => setDarkMode(!darkMode)}
-          aria-label="Toggle dark mode"
+          aria-label="Alternar modo escuro"
           className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors duration-200"
         >
           {darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
@@ -123,24 +123,24 @@ const App: React.FC = () => {
         {/* Title Section */}
         <div className="text-center mb-10 mt-8">
           <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white tracking-tight">
-            AI for Spreadsheet <span className="text-primary">Restructuring</span>
+            Reestruturador de <span className="text-primary">Planilhas com IA</span>
           </h1>
           <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed">
-            Automatically reformat your spreadsheets to match any template structure using the power of AI.
+            Reformate automaticamente suas planilhas para seguir qualquer modelo usando o poder da IA.
           </p>
         </div>
 
         {/* Upload Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
           <FileUpload
-            label="Original File (Source)"
+            label="Arquivo Original (Origem)"
             accept=".xlsx,.xls,.csv"
             selectedFile={sourceFile}
             onFileSelect={(f) => handleFileSelect(f, 'source')}
             onClear={() => { setSourceFile(null); setResult(null); setProcessingState({ status: 'idle' }); }}
           />
           <FileUpload
-            label="Template File (Destination)"
+            label="Arquivo Modelo (Destino)"
             accept=".xlsx,.xls,.csv"
             selectedFile={templateFile}
             onFileSelect={(f) => handleFileSelect(f, 'template')}
@@ -165,12 +165,12 @@ const App: React.FC = () => {
             {processingState.status === 'analyzing' || processingState.status === 'building' ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" />
-                Processing...
+                Processando...
               </>
             ) : (
               <>
                 <Wand2 className="w-6 h-6" />
-                Restructure Spreadsheet
+                Reestruturar Planilha
               </>
             )}
           </button>
@@ -189,7 +189,7 @@ const App: React.FC = () => {
           <div className="bg-white dark:bg-slate-800/50 p-6 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm h-full flex flex-col">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-700/50">
               <CheckCircle2 className="text-primary w-6 h-6" />
-              <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Process Summary</h3>
+              <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Resumo do Processo</h3>
             </div>
 
             <div className="flex-grow flex items-center justify-center">
@@ -202,7 +202,7 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Detailed Mapping</h4>
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mapeamento Detalhado</h4>
                     {Object.entries(result.mappings).map(([target, source], idx) => (
                       <div key={idx} className="flex items-center justify-between text-sm py-1 border-b border-slate-100 dark:border-slate-700/50 last:border-0">
                         <span className="text-slate-600 dark:text-slate-400 font-medium">{source}</span>
@@ -214,8 +214,8 @@ const App: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center text-slate-500 dark:text-slate-400 py-8">
-                  <p className="mb-2">No changes made yet.</p>
-                  <p className="text-sm opacity-75">When you restructure a spreadsheet, the summary will appear here.</p>
+                  <p className="mb-2">Nenhuma alteração feita ainda.</p>
+                  <p className="text-sm opacity-75">Quando você reestruturar uma planilha, o resumo aparecerá aqui.</p>
                 </div>
               )}
             </div>
@@ -225,7 +225,7 @@ const App: React.FC = () => {
           <div className="bg-white dark:bg-slate-800/50 p-6 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm h-full flex flex-col">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-700/50">
               <Download className="text-primary w-6 h-6" />
-              <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Final Download</h3>
+              <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Download Final</h3>
             </div>
 
             <div className="flex-grow flex flex-col items-center justify-center gap-6 py-8">
@@ -241,13 +241,13 @@ const App: React.FC = () => {
                 `}
               >
                 <Download className="text-xl" />
-                Download Restructured Sheet
+                Baixar Planilha Reestruturada
               </button>
 
               <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-xs">
                 {result
-                  ? `Ready to download: ${result.fileName}`
-                  : "The restructured file will be available here after processing."
+                  ? `Pronto para baixar: ${result.fileName}`
+                  : "O arquivo reestruturado estará disponível aqui após o processamento."
                 }
               </p>
             </div>
