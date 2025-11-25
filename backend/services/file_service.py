@@ -8,9 +8,12 @@ def read_file_to_dataframe(file_content: bytes, filename: str) -> pd.DataFrame:
     if filename.endswith('.csv'):
         return pd.read_csv(io.BytesIO(file_content))
     elif filename.endswith(('.xls', '.xlsx')):
-        return pd.read_excel(io.BytesIO(file_content))
+        # dtype=object evita que o pandas tente converter datas/horas automaticamente e falhe em valores negativos
+        return pd.read_excel(io.BytesIO(file_content), dtype=object)
+    elif filename.endswith('.ods'):
+        return pd.read_excel(io.BytesIO(file_content), engine='odf', dtype=object)
     else:
-        raise ValueError("Formato de arquivo não suportado. Use CSV ou Excel.")
+        raise ValueError("Formato de arquivo não suportado. Use CSV, Excel (.xlsx/.xls) ou ODS.")
 
 def get_dataframe_sample(df: pd.DataFrame, rows: int = 5) -> str:
     """Retorna uma amostra do DataFrame em formato JSON string."""
