@@ -1,0 +1,5 @@
+{
+  "name": "Smart Sheet Restructurer",
+  "description": "AI-powered tool to automatically reformat spreadsheet columns to match a target template structure using Gemini 2.5 Flash.",
+  "requestFramePermissions": []
+}
