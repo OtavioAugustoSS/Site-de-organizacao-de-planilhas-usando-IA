@@ -6,8 +6,8 @@ from fastapi.responses import JSONResponse, FileResponse
 from dotenv import load_dotenv
 import uuid
 
-from backend.services.file_service import read_file_to_dataframe, get_dataframe_sample, get_headers, generate_excel_from_data
-from backend.services.ai_service import configure_genai, restructure_data
+from services.file_service import read_file_to_dataframe, get_dataframe_sample, get_headers, generate_excel_from_data
+from services.ai_service import configure_genai, restructure_data
 
 # Carrega variáveis de ambiente
 load_dotenv()
